@@ -42,7 +42,6 @@ struct
     let jcells = path |> List.map @@ fun x -> `String x in
     `A jcells
 
-
   let json_of_sym : Symbol.t -> J.value m =
     fun sym ->
     let+ resolver = M.resolver in
