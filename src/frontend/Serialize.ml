@@ -29,6 +29,11 @@ struct
   let json_of_list json_of_item l =
     let+ xs = MU.map json_of_item l in
     `A xs
+
+  let json_of_ostring =
+     function
+     | None -> `Null
+     | Some str -> `String str
 end
 
 module Serialize (M : ResolveM) =
@@ -259,14 +264,18 @@ struct
     function
     | Sb1 ->
       M.ret @@ `A [`String "Sb1"]
+
     | SbI ->
       M.ret @@ `A [`String "SbI"]
+
     | SbP ->
       M.ret @@ `A [`String "SbP"]
+
     | SbE (sub, tm) ->
       let+ jsub = json_of_sub sub
       and+ jtm = json_of_tm tm in
       `A [`String "SbE"; jsub; jtm]
+
     | SbC (sub0, sub1) ->
       let+ jsub0 = json_of_sub sub0
       and+ jsub1 = json_of_sub sub1 in
@@ -289,6 +298,59 @@ struct
 
   and json_of_tp : S.tp -> J.value m =
     function
-    | _ -> raise CJHM
+    | TpVar x ->
+      M.ret @@ `A [`String "TpVar"; json_of_int x]
+
+    | GoalTp (nm, tp) ->
+      let+ jtp = json_of_tp tp in
+      `A [`String "GoalTp"; json_of_ostring nm; jtp]
+
+    | Univ ->
+      M.ret @@ `A [`String "Univ"]
+
+    | El tm ->
+      let+ jtm = json_of_tm tm in
+      `A [`String "El"; jtm]
+
+    | TpDim ->
+      M.ret @@ `A [`String "TpDim"]
+
+    | TpCof ->
+      M.ret @@ `A [`String "TpCof"]
+
+    | TpPrf tm ->
+      let+ jtm = json_of_tm tm in
+      `A [`String "TpPrf"; jtm]
+
+    | TpCofSplit branches ->
+      let+ jbranches = json_of_list (json_of_pair (json_of_tm, json_of_tp)) branches in
+      `A [`String "TpCofSplit"; jbranches]
+
+    | Sub (tp, tm0, tm1) ->
+      let+ jtp = json_of_tp tp
+      and+ jtm0 = json_of_tm tm0
+      and+ jtm1 = json_of_tm tm1 in
+      `A [`String "Sub"; jtp; jtm0; jtm1]
+
+    | Pi (tp0, _, tp1) ->
+      let+ jtp0 = json_of_tp tp0
+      and+ jtp1 = json_of_tp tp1 in
+      `A [`String "Pi"; jtp0; jtp1]
+
+    | Sg (tp0, _, tp1) ->
+      let+ jtp0 = json_of_tp tp0
+      and+ jtp1 = json_of_tp tp1 in
+      `A [`String "Sg"; jtp0; jtp1]
+
+    | Nat ->
+      M.ret @@ `A [`String "Nat"]
+
+    | Circle ->
+      M.ret @@ `A [`String "Circle"]
+
+    | TpESub (sub, tp) ->
+      let+ jsub = json_of_sub sub
+      and+ jtp = json_of_tp tp in
+      `A [`String "TpESub"; jsub; jtp]
 
 end
